@@ -1,8 +1,6 @@
-import sys
-import glob
-import serial
-import click
+import sys, glob, serial, click
 
+# Serial 
 def serial_ports():
     """ Lists serial port names
 
@@ -67,6 +65,14 @@ def get_serial_interface(port, excludes=[]):
     return interface
 
 
+class Application:
+    def __init__(self, lidar_interface, arduino_interface):
+        #TODO: add info like baud
+        self._lidar_serial = serial.Serial(lidar_interface)
+        self._arduino_serial = serial.Serial(arduino_interface)
+        pass
+
+
 @click.group(invoke_without_command=True)
 @click.option('--lidar-port', default=None, help='The serial file/port name (e.g. COMS4 or /dev/tty.usb3).')
 @click.option('--arduino-port', default=None, help='The serial file/port name (e.g. COMS4 or /dev/tty.usb3).')
@@ -82,12 +88,22 @@ def cli(ctx, lidar_port, arduino_port):
             excludes.append(arduino_port)
         if lidar_port is not None:
             excludes.append(lidar_port)
+        if arduino_port is None:
             click.echo("Need to select Audrino interface.")
         arduino_interface = get_serial_interface(arduino_port, excludes)
         excludes.append(arduino_port)
         if lidar_port is None:
             click.echo("Need to select Lidar interface.")
         lidar_interface = get_serial_interface(lidar_port, excludes)
+        # open serial interfaces
+        try:
+            app = Application(lidar_interface, arduino_interface)
+        except: # TODO: close serial connections
+            lidar_serial.close()
+            arduino_serial.close()
+
+        
+
 
 if __name__ == '__main__':
     cli()
