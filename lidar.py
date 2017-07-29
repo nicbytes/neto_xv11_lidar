@@ -38,7 +38,7 @@ def check_serial_port(port):
 class SerialInterfaceError(BaseException): pass
 """ Stub class to be thrown when the serial interface has a problem. Who knows what the problem is..."""
 
-def get_serial_interface(port):
+def get_serial_interface(port, excludes=[]):
     """ Runs a small cli wizard to get a valid and available serial interface
 
     :raises:
@@ -50,6 +50,7 @@ def get_serial_interface(port):
     interface = port # ensure interface is decleared outside if
     if port is None:
         ports = serial_ports()
+        ports = [p for p in ports if p not in excludes]
         while True:
             for i, name in enumerate(ports):
                 click.echo("({})\t{}".format(i, name))
@@ -67,15 +68,26 @@ def get_serial_interface(port):
 
 
 @click.group(invoke_without_command=True)
-@click.option('--port', default=None, help='The serial file/port name (e.g. COMS4 or /dev/tty.usb3).')
+@click.option('--lidar-port', default=None, help='The serial file/port name (e.g. COMS4 or /dev/tty.usb3).')
+@click.option('--arduino-port', default=None, help='The serial file/port name (e.g. COMS4 or /dev/tty.usb3).')
 @click.pass_context
-def cli(ctx, port):
+def cli(ctx, lidar_port, arduino_port):
     """ Main function run at program start.
     """
     # if there is no command, generate everything
     if ctx.invoked_subcommand is None:
-        interface = get_serial_interface(port)
+        # select interfaces
+        excludes = []
+        if arduino_port is not None:
+            excludes.append(arduino_port)
+        if lidar_port is not None:
+            excludes.append(lidar_port)
+            click.echo("Need to select Audrino interface.")
+        arduino_interface = get_serial_interface(arduino_port, excludes)
+        excludes.append(arduino_port)
+        if lidar_port is None:
+            click.echo("Need to select Lidar interface.")
+        lidar_interface = get_serial_interface(lidar_port, excludes)
 
 if __name__ == '__main__':
     cli()
-    
